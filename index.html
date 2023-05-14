@@ -1,0 +1,119 @@
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <title>Sectorisation des écoles élémentaires de Tours</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+        integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css"
+        integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"
+        integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+    <style>
+        #map {
+            height: 700px;
+            width: 1000px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Sectorisation des écoles élementaires de Tours</h1>
+
+    <p>La carte reprend les jeux de données suivants : </p>
+    <ul>
+        <li>Coordonnées géo des secteurs : <a
+                href="https://data.tours-metropole.fr/explore/dataset/sectorisation_ecole_elementaire/">https://data.tours-metropole.fr/explore/dataset/sectorisation_ecole_elementaire/</a>
+        </li>
+        <li>Capacités : <a
+                href="https://data.tours-metropole.fr/explore/dataset/ecoles-tours-metropole-val-de-loire/">https://data.tours-metropole.fr/explore/dataset/ecoles-tours-metropole-val-de-loire/</a>
+        </li>
+        <li>Effectifs (pour Clocheville) : <a
+                href="https://data.tours-metropole.fr/explore/dataset/effectif-scolaire-tmvl/">https://data.tours-metropole.fr/explore/dataset/effectif-scolaire-tmvl/</a>
+        </li>
+    </ul>
+
+    <div id="map"></div>
+
+    <script>
+        function getColor(nom) {
+            if (nom === "Clocheville") {
+                return "#0096FF";
+            }
+            return "#89CFF0";
+        }
+
+        function style(feature) {
+            return {
+                fillColor: getColor(feature.properties.nom),
+                weight: 2,
+                opacity: 1,
+                color: 'white',
+                dashArray: '2',
+                fillOpacity: 0.7
+            };
+        }
+
+        function highlightFeature(e) {
+            var layer = e.target;
+
+            layer.setStyle({
+                weight: 5,
+                color: '#666',
+                dashArray: '',
+                fillOpacity: 0.7
+            });
+
+            layer.bringToFront();
+        }
+
+        function resetHighlight(e) {
+            geojson.resetStyle(e.target);
+        }
+
+        function zoomToFeature(e) {
+            map.fitBounds(e.target.getBounds(), 10);
+        }
+
+        function onEachFeature(feature, layer) {
+            if (feature.properties.nom && feature.properties.capacites) {
+                let message = `<h2>${layer.feature.properties.nom}</h2><p>Capacité : ${layer.feature.properties.capacites}</p>`;
+                if (layer.feature.properties.nom === "Clocheville") {
+                    message += "<p>Effectifs : </p><table class=\"pure-table pure-table-bordered\"><tr><td>2019</td><td>138</td></tr><tr><td>2020</td><td>135</td></tr><tr><td>2021</td><td>138</td></tr><tr><td>2022</td><td>127</td></tr><tr><td>2023</td><td>111</td></tr></table>";
+                }
+                layer.bindPopup(message);
+            }
+            layer.on({
+                click: zoomToFeature
+            });
+        }
+        var map = L.map('map').setView([47.39088007951175, 0.6840561446981597], 13);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        var secteurs;
+        secteurs = new L.geoJson(false, {
+            onEachFeature: onEachFeature,
+            style: style
+        });
+        secteurs.addTo(map);
+
+        $.ajax({
+            dataType: "json",
+            url: "sectorisation_ecole_elementaire.geojson",
+            success: function (data) {
+                $(data.features).each(function (key, data) {
+                    secteurs.addData(data);
+                });
+            }
+        });
+
+    </script>
+</body>
+
+</html>
