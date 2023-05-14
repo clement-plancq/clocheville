@@ -13,6 +13,11 @@
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
         integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
     <style>
+        body {
+            margin-left: 10rem;
+            margin-right: 10rem;
+        }
+
         #map {
             height: 700px;
             width: 1000px;
@@ -21,20 +26,28 @@
 </head>
 
 <body>
-    <h1>Sectorisation des écoles élementaires de Tours</h1>
+    <h1>Sectorisation des écoles élémentaires de Tours centre</h1>
 
     <p>La carte reprend les jeux de données suivants : </p>
     <ul>
         <li>Coordonnées géo des secteurs : <a
-                href="https://data.tours-metropole.fr/explore/dataset/sectorisation_ecole_elementaire/">https://data.tours-metropole.fr/explore/dataset/sectorisation_ecole_elementaire/</a>
+                href="https://data.tours-metropole.fr/explore/dataset/sectorisation_ecole_elementaire/"
+                target="_blank">https://data.tours-metropole.fr/explore/dataset/sectorisation_ecole_elementaire/</a>
         </li>
-        <li>Capacités : <a
-                href="https://data.tours-metropole.fr/explore/dataset/ecoles-tours-metropole-val-de-loire/">https://data.tours-metropole.fr/explore/dataset/ecoles-tours-metropole-val-de-loire/</a>
+        <li>Capacités : <a href="https://data.tours-metropole.fr/explore/dataset/ecoles-tours-metropole-val-de-loire/"
+                target="_blank">https://data.tours-metropole.fr/explore/dataset/ecoles-tours-metropole-val-de-loire/</a>
+        </li>
+        <li>Indices de position sociale (IPS) : <a
+                href="https://data.education.gouv.fr/explore/dataset/fr-en-ips-ecoles-ap2022/"
+                target="_blank">https://data.education.gouv.fr/explore/dataset/fr-en-ips-ecoles-ap2022/</a>
         </li>
         <li>Effectifs (pour Clocheville) : <a
-                href="https://data.tours-metropole.fr/explore/dataset/effectif-scolaire-tmvl/">https://data.tours-metropole.fr/explore/dataset/effectif-scolaire-tmvl/</a>
+                href="https://data.tours-metropole.fr/explore/dataset/effectif-scolaire-tmvl/"
+                target="_blank">https://data.tours-metropole.fr/explore/dataset/effectif-scolaire-tmvl/</a>
         </li>
     </ul>
+
+    <p>Cliquez sur un secteur pour afficher les informations</p>
 
     <div id="map"></div>
 
@@ -80,17 +93,21 @@
 
         function onEachFeature(feature, layer) {
             if (feature.properties.nom && feature.properties.capacites) {
-                let message = `<h2>${layer.feature.properties.nom}</h2><p>Capacité : ${layer.feature.properties.capacites}</p>`;
-                if (layer.feature.properties.nom === "Clocheville") {
-                    message += "<p>Effectifs : </p><table class=\"pure-table pure-table-bordered\"><tr><td>2019</td><td>138</td></tr><tr><td>2020</td><td>135</td></tr><tr><td>2021</td><td>138</td></tr><tr><td>2022</td><td>127</td></tr><tr><td>2023</td><td>111</td></tr></table>";
+                let message = `<h2>${feature.properties.nom}</h2>Capacité : ${feature.properties.capacites}<br/>IPS : ${feature.properties.ips}<br/>`;
+                if (feature.properties.nom === "Clocheville") {
+                    message += "Effectifs : <br/><table class=\"pure-table pure-table-bordered\"><tr><td>2019</td><td>138</td></tr><tr><td>2020</td><td>135</td></tr><tr><td>2021</td><td>138</td></tr><tr><td>2022</td><td>127</td></tr><tr><td>2023</td><td>111</td></tr></table>";
                 }
                 layer.bindPopup(message);
+                layer.bindTooltip(feature.properties.nom, {
+                    direction: "center",
+                    permanent: true,
+                });
             }
-            layer.on({
+            /*layer.on({
                 click: zoomToFeature
-            });
+            });*/
         }
-        var map = L.map('map').setView([47.39088007951175, 0.6840561446981597], 13);
+        var map = L.map('map').setView([47.39088007951175, 0.6840561446981597], 14);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
