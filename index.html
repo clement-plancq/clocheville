@@ -7,11 +7,6 @@
         integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css"
         integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"
-        integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
-    <!-- Make sure you put this AFTER Leaflet's CSS -->
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
     <style>
         body {
             margin-left: 10rem;
@@ -50,6 +45,10 @@
     <p>Cliquez sur un secteur pour afficher les informations</p>
 
     <div id="map"></div>
+
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
 
     <script>
         function getColor(nom) {
@@ -120,15 +119,11 @@
         });
         secteurs.addTo(map);
 
-        $.ajax({
-            dataType: "json",
-            url: "sectorisation_ecole_elementaire.geojson",
-            success: function (data) {
-                $(data.features).each(function (key, data) {
-                    secteurs.addData(data);
-                });
-            }
-        });
+        fetch('sectorisation_ecole_elementaire.geojson')  // Replace with your GeoJSON file path
+            .then(response => response.json())
+            .then(data => {
+                data.features.forEach(item => secteurs.addData(item));
+            });
 
     </script>
 </body>
