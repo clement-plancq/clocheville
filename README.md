@@ -8,3 +8,4 @@ La carte reprend des informations des jeux de données suivants :
  - Capacités : https://data.tours-metropole.fr/explore/dataset/ecoles-tours-metropole-val-de-loire/
  - Indices de position sociale (IPS) : https://data.education.gouv.fr/explore/dataset/fr-en-ips-ecoles-ap2022/
  - Effectifs (pour Clocheville) : https://data.tours-metropole.fr/explore/dataset/effectif-scolaire-tmvl/
+ - Données carroyées pour % des moins de 10 ans : https://www.insee.fr/fr/statistiques/6215138?sommaire=6215217#dictionnaire

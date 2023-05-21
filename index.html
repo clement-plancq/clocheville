@@ -17,6 +17,34 @@
             height: 700px;
             width: 1000px;
         }
+
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+
+        .info h4 {
+            margin: 0 0 5px;
+            color: #777;
+        }
+
+        .legend {
+            text-align: left;
+            line-height: 18px;
+            color: #555;
+        }
+
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
     </style>
 </head>
 
@@ -40,6 +68,12 @@
                 href="https://data.tours-metropole.fr/explore/dataset/effectif-scolaire-tmvl/"
                 target="_blank">https://data.tours-metropole.fr/explore/dataset/effectif-scolaire-tmvl/</a>
         </li>
+        <li>Pourcentage des enfants de moins 10 ans : <a
+                href="https://www.insee.fr/fr/statistiques/6215138?sommaire=6215217"
+                target="_blank">https://www.insee.fr/fr/statistiques/6215138?sommaire=6215217</a>
+            (somme des variables <code>Ind_0_3</code>, <code>Ind_4_5</code>, <code>Ind_6_10</code> rapportée au nombre
+            d'invidus <code>Ind</code>). Données au carreau de 200 m, merci à Dominique Andrieux pour le découpage
+            géographique</li>
     </ul>
 
     <p>Cliquez sur un secteur pour afficher les informations</p>
@@ -51,48 +85,59 @@
         integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
 
     <script>
-        function getColor(nom) {
-            if (nom === "Clocheville") {
-                return "#0096FF";
-            }
-            return "#89CFF0";
-        }
+        const childrenLayerColors = [
+            { 3.0: { 'legend': '0% - 4%', 'color': '#3949ab' } },
+            { 6.0: { 'legend': '4% - 8%', 'color': '#7986cb' } },
+            { 9.0: { 'legend': '8% - 12%', 'color': '#c5cae9' } },
+            { 12.0: { 'legend': '12% - 16%', 'color': '#fff9c4' } },
+            { 15.0: { 'legend': '16% - 20%', 'color': '#ffee58' } },
+            { 18.0: { 'legend': '20% - 24%', 'color': '#fbc02d' } },
+            { 30.0: { 'legend': '> 24%', 'color': '#f57f17' } },
+        ];
 
-        function style(feature) {
-            return {
-                fillColor: getColor(feature.properties.nom),
-                weight: 2,
-                opacity: 1,
-                color: 'white',
-                dashArray: '2',
-                fillOpacity: 0.7
+        function createLegend() {
+            var legend = L.control({ position: 'bottomright' });
+
+            legend.onAdd = function (map) {
+                var div = L.DomUtil.create('div', 'info legend');
+
+                // Customize the legend HTML here
+                div.innerHTML = '<h4>% des enfants <br>de moins de 10 ans</h4>';
+                for (item of childrenLayerColors) {
+                    for (let key in item) {
+                        div.innerHTML += `<i style="background:${item[key]['color']}"></i>${item[key]['legend']}<br/>`;
+
+                    }
+                }
+                return div;
             };
+
+            legend.addTo(map);
         }
 
-        function highlightFeature(e) {
-            var layer = e.target;
-
-            layer.setStyle({
-                weight: 5,
-                color: '#666',
-                dashArray: '',
-                fillOpacity: 0.7
-            });
-
-            layer.bringToFront();
+        function getColor(properties) {
+            let percent = computeChildrenPercent(properties);
+            for (item of childrenLayerColors) {
+                for (let key in item) {
+                    if (percent < key) {
+                        return item[key]['color'];
+                    }
+                }
+            }
         }
 
-        function resetHighlight(e) {
-            geojson.resetStyle(e.target);
-        }
-
-        function zoomToFeature(e) {
-            map.fitBounds(e.target.getBounds(), 10);
+        function computeChildrenPercent(properties) {
+            let ind3 = parseFloat(properties['Ind_0_3']);
+            let ind5 = parseFloat(properties['Ind_4_5']);
+            let ind10 = parseFloat(properties['Ind_6_10']);
+            //let ind17 = parseFloat(properties['Ind_11_17']);
+            let ind = parseFloat(properties.Ind);
+            return 100 * (ind3 + ind5 + ind10) / ind;
         }
 
         function onEachFeature(feature, layer) {
             if (feature.properties.nom && feature.properties.capacites) {
-                let message = `<h2>${feature.properties.nom}</h2>Capacité : ${feature.properties.capacites}<br/>IPS : ${feature.properties.ips}<br/>`;
+                let message = `<h2> ${feature.properties.nom}</h2 > Capacité : ${feature.properties.capacites} <br />IPS: ${feature.properties.ips} <br />`;
                 if (feature.properties.nom === "Clocheville") {
                     message += "Effectifs : <br/><table class=\"pure-table pure-table-bordered\"><tr><td>2019</td><td>138</td></tr><tr><td>2020</td><td>135</td></tr><tr><td>2021</td><td>138</td></tr><tr><td>2022</td><td>127</td></tr><tr><td>2023</td><td>111</td></tr></table>";
                 }
@@ -100,30 +145,92 @@
                 layer.bindTooltip(feature.properties.nom, {
                     direction: "center",
                     permanent: true,
+                    opacity: 0.8
                 });
             }
             /*layer.on({
                 click: zoomToFeature
             });*/
         }
-        var map = L.map('map').setView([47.39088007951175, 0.6840561446981597], 14);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
 
-        var secteurs;
+        function loadGeoJson(file, layer) {
+            fetch(file)
+                .then(response => response.json())
+                .then(data => {
+                    data.features.forEach(item => layer.addData(item));
+                });
+        }
+
+        let secteurs;
         secteurs = new L.geoJson(false, {
             onEachFeature: onEachFeature,
-            style: style
+            style: function (feature) {
+                return {
+                    //fillColor: getColor(feature.properties.nom),
+                    fillColor: '#f5f5f5',
+                    weight: 2,
+                    opacity: 0.7,
+                    color: 'black',
+                    dashArray: '2',
+                    fillOpacity: 0.6
+                }
+            }
         });
-        secteurs.addTo(map);
+        loadGeoJson('sectorisation_ecole_elementaire.geojson', secteurs);
+        let enfants = new L.geoJson(false, {
+            /*onEachFeature: function (feature) {
+                //console.log(computeChildrenPercent(feature.properties));
+            },*/
+            style: function (feature) {
+                return {
+                    fillColor: getColor(feature.properties),
+                    weight: 0.7,
+                    opacity: 0.7,
+                    color: '#e57373',
+                    dashArray: '1',
+                    fillOpacity: 0.7
+                }
+            }
 
-        fetch('sectorisation_ecole_elementaire.geojson')  // Replace with your GeoJSON file path
-            .then(response => response.json())
-            .then(data => {
-                data.features.forEach(item => secteurs.addData(item));
-            });
+        });
+        loadGeoJson('filosofi2017_carr200m_tours.geojson', enfants);
+
+        //secteurs.addTo(map);
+        let osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        });
+        let map = L.map('map', { layers: [osm, secteurs] }).setView([47.39088007951175, 0.6840561446981597], 14);
+
+
+        let baseLayers = {
+            "OpenStreetMap": osm
+        };
+
+        let overlays = {
+            "Sectorisation": secteurs,
+            "Enfants de moins de 10 ans en 2017": enfants
+        };
+        let controlLayer = L.control.layers(baseLayers, overlays, {
+            collapsed: false
+        }).addTo(map);
+
+        map.on('overlayadd', onOverlayAdd);
+        map.on('overlayremove', onOverlayRemove);
+
+        function onOverlayAdd(e) {
+            let layer = e.name;
+            if (layer === "Enfants de moins de 10 ans en 2017") {
+                createLegend();
+            }
+        }
+
+        function onOverlayRemove(e) {
+            let layer = e.name;
+            if (layer === "Enfants de moins de 10 ans en 2017") {
+                L.DomUtil.remove(document.querySelector('div.legend'));
+            }
+        }
 
     </script>
 </body>
