@@ -200,6 +200,12 @@
         loadGeoJson('sectorisation_ecole_elementaire.geojson', secteurs);
         let enfants = new L.geoJson(false, {
             onEachFeature: onEachFeatureCarreaux,
+            filter: function (feature, layer) {
+                if (parseFloat(feature.properties.Ind) < 5) {
+                    return false;
+                }
+                return true;
+            },
             style: function (feature) {
                 return {
                     fillColor: getColor(feature.properties),
@@ -239,7 +245,7 @@
         map.addControl(new L.Control.Fullscreen());
 
         // control that shows state info on hover
-        const info = L.control();
+        const info = L.control({ position: 'bottomright' });
 
         function onOverlayAdd(e) {
             let layer = e.name;
@@ -265,7 +271,17 @@
         };
 
         info.update = function (props) {
-            const contents = props ? `<b>${props.Ind}</b>` : 'Passez la souris sur un carreau';
+            var contents = "";
+            if (props) {
+                let ind3 = parseFloat(props['Ind_0_3']);
+                let ind5 = parseFloat(props['Ind_4_5']);
+                let ind10 = parseFloat(props['Ind_6_10']);
+                let enfants = ind3 + ind5 + ind10;
+                contents = `${props.Ind} / ${enfants}`;
+            }
+            else {
+                contents = 'Passez la souris sur un carreau';
+            }
             this._div.innerHTML = `<h4>Nb d'individus / nb d'enfants < 10 ans</h4>${contents}`;
         };
 
