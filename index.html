@@ -139,7 +139,16 @@
             return 100 * (ind3 + ind5 + ind10) / ind;
         }
 
-        function onEachFeature(feature, layer) {
+        function highlightFeature(e) {
+            const layer = e.target;
+            info.update(layer.feature.properties);
+        }
+
+        function resetHighlight(e) {
+            info.update();
+        }
+
+        function onEachFeatureSecteurs(feature, layer) {
             if (feature.properties.nom && feature.properties.capacites) {
                 let message = `<h2> ${feature.properties.nom}</h2 > Capacité : ${feature.properties.capacites} <br />IPS: ${feature.properties.ips} <br />`;
                 if (feature.properties.nom === "Clocheville") {
@@ -157,6 +166,14 @@
             });*/
         }
 
+        function onEachFeatureCarreaux(feature, layer) {
+            layer.on({
+                mouseover: highlightFeature,
+                mouseout: resetHighlight,
+            });
+        }
+
+
         function loadGeoJson(file, layer) {
             fetch(file)
                 .then(response => response.json())
@@ -167,7 +184,7 @@
 
         let secteurs;
         secteurs = new L.geoJson(false, {
-            onEachFeature: onEachFeature,
+            onEachFeature: onEachFeatureSecteurs,
             style: function (feature) {
                 return {
                     //fillColor: getColor(feature.properties.nom),
@@ -182,9 +199,7 @@
         });
         loadGeoJson('sectorisation_ecole_elementaire.geojson', secteurs);
         let enfants = new L.geoJson(false, {
-            /*onEachFeature: function (feature) {
-                //console.log(computeChildrenPercent(feature.properties));
-            },*/
+            onEachFeature: onEachFeatureCarreaux,
             style: function (feature) {
                 return {
                     fillColor: getColor(feature.properties),
@@ -223,10 +238,14 @@
         map.on('overlayremove', onOverlayRemove);
         map.addControl(new L.Control.Fullscreen());
 
+        // control that shows state info on hover
+        const info = L.control();
+
         function onOverlayAdd(e) {
             let layer = e.name;
             if (layer === "Enfants de moins de 10 ans en 2017") {
                 createLegend();
+                info.addTo(map);
             }
         }
 
@@ -234,8 +253,22 @@
             let layer = e.name;
             if (layer === "Enfants de moins de 10 ans en 2017") {
                 L.DomUtil.remove(document.querySelector('div.legend'));
+                L.DomUtil.remove(document.querySelector('div.info'));
             }
         }
+
+
+        info.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+
+        info.update = function (props) {
+            const contents = props ? `<b>${props.Ind}</b>` : 'Passez la souris sur un carreau';
+            this._div.innerHTML = `<h4>Nb d'individus / nb d'enfants < 10 ans</h4>${contents}`;
+        };
+
 
     </script>
 </body>
